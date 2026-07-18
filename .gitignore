@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.next/
+.env
+*.log
+*.tsbuildinfo
+.claude/settings.local.json
+secret.md
