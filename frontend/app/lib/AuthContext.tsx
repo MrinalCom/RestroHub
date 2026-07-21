@@ -16,6 +16,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
   ready: boolean;
+  loggingOut: boolean;
   login: (user: AuthUser, token: string) => void;
   logout: () => void;
 }
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("restrohub_token");
@@ -46,11 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function login(newUser: AuthUser, newToken: string) {
     localStorage.setItem("restrohub_token", newToken);
     localStorage.setItem("restrohub_user", JSON.stringify(newUser));
+    setLoggingOut(false);
     setUser(newUser);
     setToken(newToken);
   }
 
   function logout() {
+    // Set before clearing user so a protected page's own "redirect to /login if
+    // unauthenticated" guard effect doesn't race this intentional navigation to "/".
+    setLoggingOut(true);
     localStorage.removeItem("restrohub_token");
     localStorage.removeItem("restrohub_user");
     setUser(null);
@@ -59,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, ready, login, logout }}>
+    <AuthContext.Provider value={{ user, token, ready, loggingOut, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

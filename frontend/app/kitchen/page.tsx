@@ -18,14 +18,14 @@ const COLUMNS: { status: string; label: string }[] = [
 
 export default function KitchenPage() {
   const router = useRouter();
-  const { user, token, ready } = useAuth();
+  const { user, token, ready, loggingOut } = useAuth();
   const [orders, setOrders] = useState<Record<string, KanbanOrder>>({});
 
   useEffect(() => {
-    if (ready && (!user || (user.role !== "staff" && user.role !== "owner"))) {
+    if (ready && !loggingOut && (!user || (user.role !== "staff" && user.role !== "owner"))) {
       router.push("/login");
     }
-  }, [ready, user, router]);
+  }, [ready, user, loggingOut, router]);
 
   useEffect(() => {
     if (!token) return;

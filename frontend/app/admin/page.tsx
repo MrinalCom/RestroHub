@@ -43,7 +43,7 @@ interface DashboardStats {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, token, ready, logout } = useAuth();
+  const { user, token, ready, loggingOut, logout } = useAuth();
   const [menu, setMenu] = useState<MenuItemRow[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [modal, setModal] = useState<{ mode: "create" | "edit"; item?: MenuItemFull } | null>(
@@ -52,10 +52,10 @@ export default function AdminPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (ready && (!user || user.role !== "owner")) {
+    if (ready && !loggingOut && (!user || user.role !== "owner")) {
       router.push("/login");
     }
-  }, [ready, user, router]);
+  }, [ready, user, loggingOut, router]);
 
   const loadMenu = useCallback(() => {
     fetch(`${API_URL}/api/menu`)
