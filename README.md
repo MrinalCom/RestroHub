@@ -84,6 +84,12 @@ shaped problem:
    positive/negative themes, and a per-review label via the same forced-tool-use pattern as the
    craving-profile extractor. Results land in `review_scrapes` and render as a chart card on the
    owner dashboard.
+3. **A no-LLM fallback** (`backend/src/services/fallback*.service.ts`). If Claude is unreachable,
+   `/api/concierge/chat` and `/api/recommend/mood` don't just error out — a Fuse.js fuzzy matcher
+   answers FAQs (hours, location, contact) with no training data, and a keyword-to-craving-vector
+   guesser feeds the *same* `rankMenuByProfile` cosine-similarity math the real recommender uses,
+   just with a cruder input vector. The chat widget flags these replies with a small "Basic mode"
+   tag so it's never pretending to be smarter than it is.
 
 ## Project structure
 
