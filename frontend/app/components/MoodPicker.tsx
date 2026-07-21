@@ -37,9 +37,9 @@ export default function MoodPicker({ onRecommend }: Props) {
         className="mood-box"
         animate={{
           boxShadow: focused
-            ? "0 10px 30px rgba(203, 160, 80, 0.22)"
-            : "0 2px 10px rgba(0, 0, 0, 0.35)",
-          borderColor: focused ? "#cba050" : "rgba(203, 160, 80, 0.18)",
+            ? "0 10px 30px rgba(173, 124, 51, 0.16)"
+            : "0 1px 2px rgba(20, 22, 28, 0.05)",
+          borderColor: focused ? "#c99a55" : "#e3dfd2",
         }}
         transition={{ duration: 0.25 }}
       >
@@ -98,7 +98,7 @@ export default function MoodPicker({ onRecommend }: Props) {
           <motion.button
             key={q.label}
             className="chip"
-            whileHover={{ scale: 1.05, backgroundColor: "rgba(203, 160, 80, 0.12)", borderColor: "#cba050" }}
+            whileHover={{ scale: 1.05, backgroundColor: "rgba(173, 124, 51, 0.1)", borderColor: "#c99a55" }}
             whileTap={{ scale: 0.96 }}
             onClick={() => {
               setMood(q.value);

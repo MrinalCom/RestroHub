@@ -44,7 +44,7 @@ export default function MenuGrid({ items, recommendedIds, onOrder }: Props) {
             layout
             variants={card}
             className={`card ${isRecommended ? "recommended" : ""}`}
-            whileHover={{ y: -4, boxShadow: "0 16px 34px rgba(0, 0, 0, 0.5)" }}
+            whileHover={{ y: -4, boxShadow: "0 16px 34px rgba(20, 22, 28, 0.12)" }}
             transition={{ layout: { duration: 0.3 } }}
           >
             <div className="dish-image-wrap">
