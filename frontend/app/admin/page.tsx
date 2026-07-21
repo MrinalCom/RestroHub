@@ -9,6 +9,7 @@ import RevenueChart from "./components/RevenueChart";
 import StatusBreakdown from "./components/StatusBreakdown";
 import TopDishesChart from "./components/TopDishesChart";
 import ConversionFunnel from "./components/ConversionFunnel";
+import ReviewSentiment from "./components/ReviewSentiment";
 import MenuFormModal, { MenuItemFull } from "./components/MenuFormModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -159,12 +160,13 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {stats && (
+        {stats && token && (
           <div className="charts-grid">
             <RevenueChart data={stats.revenueTimeseries} />
             <StatusBreakdown data={stats.statusBreakdown} />
             <TopDishesChart data={stats.topDishes} />
             <ConversionFunnel data={stats.moodConversion} />
+            <ReviewSentiment token={token} />
           </div>
         )}
 

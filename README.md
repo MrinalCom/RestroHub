@@ -12,7 +12,10 @@ than being the whole product.
 - **DB**: Postgres
 - **Cache/session store**: Redis
 - **Real-time**: Socket.io (order status pushed to kitchen display + customer)
-- **AI**: Claude API (Anthropic) for structured mood → craving-profile extraction
+- **AI**: Claude API (Anthropic) for structured mood → craving-profile extraction, plus a
+  LangGraph tool-calling agent for open-ended concierge chat
+- **Scraping**: Python (BeautifulSoup + requests), invoked as a subprocess, for the owner-side
+  review-sentiment aggregator
 - **Orchestration**: Docker Compose
 
 ## Getting started
@@ -61,6 +64,27 @@ and search-relevance teams (the kind you'd find at Amazon or Flipkart) actually 
    exactly the training data a real learned ranker (logistic regression / GBDT over the same
    features) would replace the hand-tuned 0.7/0.3 weights with — the natural "phase 2."
 
+## Beyond the single LLM call
+
+Two more AI-touching features layer on top of the mood recommender, each solving a different
+shaped problem:
+
+1. **A LangGraph concierge agent** (`backend/src/agents/`). The mood recommender is a single
+   forced tool-call — great when you already know the shape of the answer. The concierge
+   (`POST /api/concierge/chat`) handles open-ended requests ("something spicy under $12" mixes a
+   mood *and* a hard constraint) via a LangGraph `createReactAgent` that autonomously decides
+   between two tools: `match_mood` (wraps the existing hybrid ranker) and `search_menu` (a direct
+   category/price filter). The agent only chooses *which* tool to call and how to phrase the
+   answer — ranking math and DB access stay in `recommend.service.ts`, and `customerId` is closed
+   over server-side rather than trusted as an LLM-supplied argument.
+2. **A BeautifulSoup review-sentiment aggregator** (`backend/scripts/scrape_reviews.py`,
+   owner-only `POST /api/reviews/scrape`). Rather than reimplementing HTML parsing in JS, a small
+   Python subprocess (robots.txt-respecting, single-request, no crawling) pulls review-shaped text
+   blocks out of an owner-supplied URL; Claude then extracts overall sentiment, recurring
+   positive/negative themes, and a per-review label via the same forced-tool-use pattern as the
+   craving-profile extractor. Results land in `review_scrapes` and render as a chart card on the
+   owner dashboard.
+
 ## Project structure
 
 ```
@@ -69,9 +93,12 @@ backend/
     config/       # Postgres + Redis clients
     db/init.sql   # schema + seed data
     middleware/   # JWT auth (required + optional)
-    routes/       # auth, menu, orders, reservations, recommend
-    services/     # claude.service.ts (LLM call), recommend.service.ts (ranking)
+    routes/       # auth, menu, orders, reservations, recommend, concierge, reviews
+    services/     # claude.service.ts (LLM calls), recommend.service.ts (ranking),
+                  # reviewScraper.service.ts / reviewInsights.service.ts (scrape + analyze)
+    agents/       # LangGraph concierge agent + its tools
     sockets/      # Socket.io rooms for kitchen + per-order updates
+  scripts/        # scrape_reviews.py — BeautifulSoup review scraper
 frontend/
   app/
     page.tsx          # customer menu + mood picker

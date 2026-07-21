@@ -56,3 +56,73 @@ export async function extractCravingProfile(moodText: string): Promise<CravingPr
   }
   return toolUse.input as CravingProfile;
 }
+
+export type ReviewSentiment = "positive" | "neutral" | "negative";
+
+export interface ReviewInsights {
+  overallSentiment: "positive" | "mixed" | "negative";
+  positiveThemes: string[];
+  negativeThemes: string[];
+  summary: string;
+  perReview: { index: number; sentiment: ReviewSentiment }[];
+}
+
+const REVIEW_INSIGHTS_TOOL = {
+  name: "analyze_reviews",
+  description:
+    "Analyze a batch of scraped review/testimonial text snippets and extract overall sentiment, recurring themes, and a per-review sentiment label.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      overallSentiment: { type: "string", enum: ["positive", "mixed", "negative"] },
+      positiveThemes: {
+        type: "array",
+        items: { type: "string" },
+        description: "Short recurring positive themes, e.g. 'fast delivery', 'friendly staff'",
+      },
+      negativeThemes: {
+        type: "array",
+        items: { type: "string" },
+        description: "Short recurring negative themes, e.g. 'long wait times'",
+      },
+      summary: { type: "string", description: "2-3 sentence summary for a restaurant owner" },
+      perReview: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            index: { type: "number", description: "0-based index into the input reviews array" },
+            sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
+          },
+          required: ["index", "sentiment"],
+        },
+      },
+    },
+    required: ["overallSentiment", "positiveThemes", "negativeThemes", "summary", "perReview"],
+  },
+};
+
+export async function analyzeReviews(reviews: string[]): Promise<ReviewInsights> {
+  const numbered = reviews.map((r, i) => `[${i}] ${r}`).join("\n\n");
+
+  const response = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 1024,
+    tools: [REVIEW_INSIGHTS_TOOL],
+    tool_choice: { type: "tool", name: "analyze_reviews" },
+    messages: [
+      {
+        role: "user",
+        content: `Here are ${reviews.length} scraped review/testimonial snippets from a restaurant's web presence. Some snippets may be site navigation or unrelated text that slipped through the scraper — ignore those when forming themes.\n\n${numbered}`,
+      },
+    ],
+  });
+
+  const toolUse = response.content.find(
+    (block): block is Anthropic.ToolUseBlock => block.type === "tool_use"
+  );
+  if (!toolUse) {
+    throw new Error("Claude did not return structured review insights");
+  }
+  return toolUse.input as ReviewInsights;
+}

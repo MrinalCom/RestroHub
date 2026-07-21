@@ -80,6 +80,20 @@ CREATE TABLE mood_recommendation_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Owner-triggered review/sentiment scrapes: one row per scrape run against an
+-- owner-supplied URL, with Claude's sentiment/theme extraction over the scraped text.
+CREATE TABLE review_scrapes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_url TEXT NOT NULL,
+  review_count INTEGER NOT NULL,
+  overall_sentiment TEXT NOT NULL,
+  positive_themes JSONB NOT NULL,
+  negative_themes JSONB NOT NULL,
+  summary TEXT NOT NULL,
+  sentiment_breakdown JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Full Indian menu spanning six categories, with craving profiles covering
 -- every corner of the comfort/spicy/light/sweet/energizing space.
 INSERT INTO menu_items (name, description, price, category) VALUES
