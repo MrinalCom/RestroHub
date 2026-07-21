@@ -2,12 +2,13 @@ import { pool } from "../config/db.js";
 import { redis } from "../config/redis.js";
 import { extractCravingProfile, CravingProfile } from "./claude.service.js";
 
-const CRAVING_DIMENSIONS = ["comfort", "spicy", "light", "sweet", "energizing"] as const;
-type Dimension = (typeof CRAVING_DIMENSIONS)[number];
+export const CRAVING_DIMENSIONS = ["comfort", "spicy", "light", "sweet", "energizing"] as const;
+export type Dimension = (typeof CRAVING_DIMENSIONS)[number];
+export type CravingVector = Record<Dimension, number>;
 
 const PROFILE_CACHE_TTL_SECONDS = 60 * 60 * 24; // 1 day — mood phrasing repeats a lot ("stressed", "tired")
 
-function cosineSimilarity(a: Record<Dimension, number>, b: Record<Dimension, number>): number {
+function cosineSimilarity(a: CravingVector, b: CravingVector): number {
   let dot = 0;
   let normA = 0;
   let normB = 0;
@@ -62,13 +63,16 @@ async function getCravingProfile(moodText: string): Promise<CravingProfile> {
   return profile;
 }
 
-export async function getMoodRecommendations(
-  moodText: string,
-  customerId: string | undefined,
-  limit = 5
-): Promise<MoodRecommendationResult> {
-  const cravingProfile = await getCravingProfile(moodText);
-
+/**
+ * Pure ranking step — no LLM, no logging. Split out from getMoodRecommendations so the
+ * no-LLM fallback path (a keyword-guessed vector instead of a Claude-extracted one) can
+ * reuse the exact same cosine-similarity + popularity blend rather than a separate,
+ * unvalidated fallback ranking.
+ */
+export async function rankMenuByProfile(
+  profile: CravingVector,
+  limit: number
+): Promise<Recommendation[]> {
   const itemsResult = await pool.query<MenuItemRow>(
     `SELECT m.id, m.name, m.description, m.price, m.order_count,
             COALESCE(i.stock_quantity, 0) AS stock_quantity,
@@ -81,9 +85,9 @@ export async function getMoodRecommendations(
 
   const maxOrderCount = Math.max(1, ...itemsResult.rows.map((r) => r.order_count));
 
-  const ranked = itemsResult.rows
+  return itemsResult.rows
     .map((row) => {
-      const semanticScore = cosineSimilarity(cravingProfile, row);
+      const semanticScore = cosineSimilarity(profile, row);
       const popularityScore = row.order_count / maxOrderCount;
       // Hybrid: mood match dominates, popularity is a tiebreaker/business signal —
       // pure semantic similarity alone tends to recommend obscure items nobody actually likes.
@@ -98,18 +102,32 @@ export async function getMoodRecommendations(
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
+}
 
+export async function logRecommendation(
+  customerId: string | undefined,
+  moodText: string,
+  cravingProfile: CravingVector,
+  recommended: Recommendation[]
+): Promise<string> {
   const logResult = await pool.query(
     `INSERT INTO mood_recommendation_logs (customer_id, mood_text, craving_profile, recommended_item_ids)
      VALUES ($1, $2, $3, $4) RETURNING id`,
-    [customerId ?? null, moodText, JSON.stringify(cravingProfile), ranked.map((r) => r.id)]
+    [customerId ?? null, moodText, JSON.stringify(cravingProfile), recommended.map((r) => r.id)]
   );
+  return logResult.rows[0].id;
+}
 
-  return {
-    logId: logResult.rows[0].id,
-    cravingProfile,
-    recommendations: ranked,
-  };
+export async function getMoodRecommendations(
+  moodText: string,
+  customerId: string | undefined,
+  limit = 5
+): Promise<MoodRecommendationResult> {
+  const cravingProfile = await getCravingProfile(moodText);
+  const ranked = await rankMenuByProfile(cravingProfile, limit);
+  const logId = await logRecommendation(customerId, moodText, cravingProfile, ranked);
+
+  return { logId, cravingProfile, recommendations: ranked };
 }
 
 /**
