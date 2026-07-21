@@ -9,6 +9,8 @@ import { ordersRouter } from "./routes/orders.routes.js";
 import { reservationsRouter } from "./routes/reservations.routes.js";
 import { recommendRouter } from "./routes/recommend.routes.js";
 import { statsRouter } from "./routes/stats.routes.js";
+import { conciergeRouter } from "./routes/concierge.routes.js";
+import { reviewsRouter } from "./routes/reviews.routes.js";
 import { registerOrderSocket } from "./sockets/orderSocket.js";
 
 const app = express();
@@ -31,6 +33,8 @@ app.use("/api/orders", ordersRouter);
 app.use("/api/reservations", reservationsRouter);
 app.use("/api/recommend", recommendRouter);
 app.use("/api/stats", statsRouter);
+app.use("/api/concierge", conciergeRouter);
+app.use("/api/reviews", reviewsRouter);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

@@ -8,7 +8,7 @@ interface Dish {
   orderCount: number;
 }
 
-const GOLD = "#e4c07c";
+const GOLD = "#ad7c33";
 
 function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
@@ -37,16 +37,16 @@ export default function TopDishesChart({ data }: { data: Dish[] }) {
             type="category"
             dataKey="name"
             width={130}
-            tick={{ fill: "#b3a894", fontSize: 12 }}
+            tick={{ fill: "#54565f", fontSize: 12 }}
             axisLine={false}
             tickLine={false}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(203,160,80,0.06)" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(173,124,51,0.06)" }} />
           <Bar dataKey="orderCount" fill={GOLD} radius={[0, 4, 4, 0]} maxBarSize={20}>
             <LabelList
               dataKey="orderCount"
               position="right"
-              fill="#f4ede1"
+              fill="#14161c"
               fontSize={12}
               formatter={(v: unknown) => (typeof v === "number" && v > 0 ? v : "")}
             />

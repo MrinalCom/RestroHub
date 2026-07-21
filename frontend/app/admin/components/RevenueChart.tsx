@@ -15,7 +15,7 @@ interface Point {
   revenue: number;
 }
 
-const GOLD = "#e4c07c";
+const GOLD = "#ad7c33";
 
 function formatDay(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -43,22 +43,22 @@ export default function RevenueChart({ data }: { data: Point[] }) {
               <stop offset="100%" stopColor={GOLD} stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="0" vertical={false} stroke="rgba(203,160,80,0.12)" />
+          <CartesianGrid strokeDasharray="0" vertical={false} stroke="#e3dfd2" />
           <XAxis
             dataKey="day"
             tickFormatter={formatDay}
-            tick={{ fill: "#766c5c", fontSize: 11 }}
-            axisLine={{ stroke: "rgba(203,160,80,0.18)" }}
+            tick={{ fill: "#54565f", fontSize: 11 }}
+            axisLine={{ stroke: "#e3dfd2" }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: "#766c5c", fontSize: 11 }}
+            tick={{ fill: "#54565f", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             width={50}
             tickFormatter={(v) => `$${v}`}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(203,160,80,0.35)" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(173,124,51,0.35)" }} />
           <Area
             type="monotone"
             dataKey="revenue"
@@ -66,7 +66,7 @@ export default function RevenueChart({ data }: { data: Point[] }) {
             strokeWidth={2}
             fill="url(#revenueFill)"
             dot={false}
-            activeDot={{ r: 4, stroke: "#1c1813", strokeWidth: 2, fill: GOLD }}
+            activeDot={{ r: 4, stroke: "#faf9f5", strokeWidth: 2, fill: GOLD }}
           />
         </AreaChart>
       </ResponsiveContainer>
