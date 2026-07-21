@@ -5,6 +5,7 @@ import { AuthProvider } from "./lib/AuthContext";
 import TopBar from "./components/TopBar";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
+import ChatWidget from "./components/ChatWidget";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <NavBar />
           {children}
           <Footer />
+          <ChatWidget />
         </AuthProvider>
       </body>
     </html>
