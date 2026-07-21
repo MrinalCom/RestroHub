@@ -1493,6 +1493,15 @@ select {
   border: 1px solid var(--red-soft);
 }
 
+.chat-degraded-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  margin: 0.25rem 0 0 0.2rem;
+}
+
 .chat-typing {
   align-self: flex-start;
   display: flex;

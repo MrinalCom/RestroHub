@@ -10,6 +10,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   error?: boolean;
+  degraded?: boolean;
 }
 
 const GREETING: ChatMessage = {
@@ -51,7 +52,10 @@ export default function ChatWidget() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
-      setMessages([...next, { role: "assistant", content: data.reply || "…" }]);
+      setMessages([
+        ...next,
+        { role: "assistant", content: data.reply || "…", degraded: Boolean(data.degraded) },
+      ]);
     } catch (err) {
       setMessages([
         ...next,
@@ -80,11 +84,11 @@ export default function ChatWidget() {
 
             <div className="chat-messages" ref={scrollRef}>
               {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`chat-bubble ${m.role}${m.error ? " error" : ""}`}
-                >
-                  {m.content}
+                <div key={i}>
+                  <div className={`chat-bubble ${m.role}${m.error ? " error" : ""}`}>
+                    {m.content}
+                  </div>
+                  {m.degraded && <div className="chat-degraded-tag">Basic mode — smart assistant offline</div>}
                 </div>
               ))}
               {loading && (
