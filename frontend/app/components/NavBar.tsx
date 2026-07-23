@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "../lib/AuthContext";
+import { useCart } from "../lib/CartContext";
 
 const MAIN_LINKS = [
   { href: "/#home", label: "Home" },
@@ -20,6 +21,7 @@ const STAFF_LINKS = [
 export default function NavBar() {
   const pathname = usePathname();
   const { user, ready, logout } = useAuth();
+  const cart = useCart();
 
   return (
     <header className="nav">
@@ -54,6 +56,11 @@ export default function NavBar() {
             );
           })}
         </nav>
+
+        <button className="cart-toggle" onClick={cart.open} aria-label="Open cart">
+          🛒
+          {cart.count > 0 && <span className="cart-badge">{cart.count}</span>}
+        </button>
 
         {ready && user ? (
           <div className="nav-user">

@@ -1,9 +1,10 @@
 # RestroHub
 
-A full-stack restaurant management & ordering platform: customers browse the menu and order
-online, kitchen staff work off a live order queue, and the owner manages the menu, pricing, and
-inventory from a dashboard. AI is embedded as a feature — a mood-based dish recommender — rather
-than being the whole product.
+A full-stack restaurant management & ordering platform: customers browse the menu, get mood-based
+recommendations, add dishes to a cart, check out, and watch their order move through the kitchen
+live; kitchen staff work off a live order queue; the owner manages the menu, pricing, inventory,
+and review sentiment from a dashboard. AI is embedded as a feature — a mood-based dish recommender,
+a concierge chat agent, a review-sentiment aggregator — rather than being the whole product.
 
 ## Stack
 
@@ -90,6 +91,29 @@ shaped problem:
    guesser feeds the *same* `rankMenuByProfile` cosine-similarity math the real recommender uses,
    just with a cruder input vector. The chat widget flags these replies with a small "Basic mode"
    tag so it's never pretending to be smarter than it is.
+4. **A chat widget** (`frontend/app/components/ChatWidget.tsx`), floating on every page, is the
+   concierge agent's actual UI: it resends the full conversation each turn (no server-side session
+   state), shows a typing indicator, and surfaces the "Basic mode" tag whenever a reply came from
+   the no-LLM fallback above instead of Claude.
+
+## Ordering & live tracking
+
+Customers can now actually place an order, not just browse — `MenuGrid`'s "Add" button used to be
+unwired to anything. The pieces:
+
+- **Cart** (`frontend/app/lib/CartContext.tsx`): localStorage-persisted, global via context (same
+  pattern as `AuthContext.tsx`), so the nav cart badge and the drawer both read from the one
+  source of truth regardless of which page added an item.
+- **Checkout** (`frontend/app/components/CartDrawer.tsx`): a slide-in drawer that posts to the
+  existing `POST /api/orders`, carrying `recommendationLogId` when the cart contains a
+  mood-recommended dish so the conversion feedback loop (see above) still closes.
+- **Live tracking** (`frontend/app/orders/[id]/page.tsx`): the backend already had `order:watch` /
+  `order:unwatch` Socket.io handlers (`backend/src/sockets/orderSocket.ts`) built for exactly this
+  and nothing was using them — the tracking page joins that room and updates its status stepper
+  live as kitchen staff advance the order, no polling or refresh.
+- Fixed alongside this: `GET /api/orders/:id` had no ownership check — any authenticated user
+  could fetch any order by ID. It's now scoped to the order's own customer (staff/owner keep full
+  access, matching every other staff-facing endpoint).
 
 ## Project structure
 
@@ -107,10 +131,12 @@ backend/
   scripts/        # scrape_reviews.py — BeautifulSoup review scraper
 frontend/
   app/
-    page.tsx          # customer menu + mood picker
-    admin/page.tsx     # owner dashboard
-    kitchen/page.tsx   # live order queue
-    components/        # MoodPicker, MenuGrid
+    page.tsx            # customer menu, mood picker, cart wiring
+    admin/page.tsx       # owner dashboard (charts + review sentiment)
+    kitchen/page.tsx     # live order queue
+    orders/[id]/page.tsx # live order tracking (Socket.io)
+    lib/                 # AuthContext, CartContext (both localStorage-backed)
+    components/          # MoodPicker, MenuGrid, ChatWidget, CartDrawer, NavBar, ...
 docker-compose.yml
 ```
 
@@ -118,6 +144,12 @@ docker-compose.yml
 
 - Password reset / email verification
 - Table/seat management beyond simple reservation records
+- A reservations *booking UI* — `POST`/`GET /api/reservations` already exist and work, there's
+  just no frontend calling them yet
+- A customer-facing order-history list (today a customer can track the order they just placed via
+  its URL, but there's no "my past orders" view)
 - Payment integration (Stripe et al.)
+- Automated tests and a real CI pipeline — the repo currently has a leftover `deno.yml` GitHub
+  Actions workflow unrelated to this stack (it's a Node/TS project, not Deno) and no test suite
 - A production Dockerfile (multi-stage build) — current Dockerfiles run `dev` mode for hot reload
 - Swapping the hand-tuned ranking weights for a learned model once there's enough conversion data

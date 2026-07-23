@@ -89,9 +89,14 @@ ordersRouter.post("/", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
-ordersRouter.get("/:id", requireAuth, async (req, res) => {
+ordersRouter.get("/:id", requireAuth, async (req: AuthedRequest, res) => {
   const order = await pool.query(`SELECT * FROM orders WHERE id = $1`, [req.params.id]);
   if (!order.rowCount) return res.status(404).json({ error: "Order not found" });
+
+  const isStaff = req.user!.role === "staff" || req.user!.role === "owner";
+  if (!isStaff && order.rows[0].customer_id !== req.user!.id) {
+    return res.status(403).json({ error: "Not your order" });
+  }
 
   const items = await pool.query(
     `SELECT oi.quantity, oi.unit_price, m.name
