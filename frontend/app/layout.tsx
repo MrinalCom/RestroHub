@@ -2,10 +2,12 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
 import { AuthProvider } from "./lib/AuthContext";
+import { CartProvider } from "./lib/CartContext";
 import TopBar from "./components/TopBar";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import ChatWidget from "./components/ChatWidget";
+import CartDrawer from "./components/CartDrawer";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -38,11 +40,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <body>
         <AuthProvider>
-          <TopBar />
-          <NavBar />
-          {children}
-          <Footer />
-          <ChatWidget />
+          <CartProvider>
+            <TopBar />
+            <NavBar />
+            {children}
+            <Footer />
+            <ChatWidget />
+            <CartDrawer />
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

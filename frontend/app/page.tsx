@@ -8,6 +8,7 @@ import Features from "./components/Features";
 import MoodPicker from "./components/MoodPicker";
 import MenuGrid from "./components/MenuGrid";
 import MenuSkeleton from "./components/MenuSkeleton";
+import { useCart } from "./lib/CartContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -25,6 +26,7 @@ interface Recommendation {
 }
 
 export default function HomePage() {
+  const cart = useCart();
   const [menu, setMenu] = useState<MenuItem[] | null>(null);
   const [recommended, setRecommended] = useState<Set<string>>(new Set());
   const [reasoning, setReasoning] = useState<string | null>(null);
@@ -49,6 +51,15 @@ export default function HomePage() {
     setRecommended(ids);
     setReasoning(data.cravingProfile?.reasoning ?? null);
     setCategory("all");
+    cart.setLastRecommendationLogId(data.logId ?? null);
+  }
+
+  function handleAddToCart(itemId: string) {
+    const item = menu?.find((m) => m.id === itemId);
+    if (!item) return;
+    // menu prices come back from Postgres NUMERIC columns as strings despite the TS type.
+    cart.addItem({ id: item.id, name: item.name, price: Number(item.price) });
+    cart.open();
   }
 
   const categories = useMemo(() => {
@@ -114,7 +125,7 @@ export default function HomePage() {
         {menu === null ? (
           <MenuSkeleton />
         ) : (
-          <MenuGrid items={filtered} recommendedIds={recommended} />
+          <MenuGrid items={filtered} recommendedIds={recommended} onOrder={handleAddToCart} />
         )}
       </div>
     </>
